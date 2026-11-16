@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="row">
+  <div><h2>{{ sess.course.code }} &ndash; {{ sess.title }}</h2>
+       <span class="muted">{{ sess.started.strftime("%d %b %Y %H:%M") }} UTC &middot; {{ "in progress" if sess.is_open else "closed" }}</span></div>
+  <a class="btn" href="{{ url_for('session_csv', sid=sess.id) }}">Download CSV</a>
+</div>
+<section class="card">
+  <h3>{{ sess.records|length }} present</h3>
+  <table>
+    <tr><th>#</th><th>Register no.</th><th>Name</th><th>Marked at (UTC)</th></tr>
+    {% for r in sess.records %}
+    <tr><td>{{ loop.index }}</td><td>{{ r.reg_no }}</td><td>{{ r.name }}</td><td>{{ r.marked_at.strftime("%H:%M:%S") }}</td></tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">Nobody marked attendance.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+<p><a href="{{ url_for('course_page', cid=sess.course_id) }}">&larr; {{ sess.course.code }} summary</a></p>
+{% endblock %}

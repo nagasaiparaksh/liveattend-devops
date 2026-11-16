@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block body %}
+<h2>Your courses</h2>
+{% for s in live %}
+  <div class="flash ok">Session in progress: <a href="{{ url_for('session_host', sid=s.id) }}">{{ s.course.code }} &ndash; {{ s.title }}</a></div>
+{% endfor %}
+{% for c in courses %}
+<section class="card">
+  <div class="row">
+    <div><h3><a href="{{ url_for('course_page', cid=c.id) }}">{{ c.code }}</a> &ndash; {{ c.name }}</h3>
+         <span class="muted">{{ c.sessions|length }} session(s)</span></div>
+    <form method="post" action="{{ url_for('session_start', cid=c.id) }}" class="inline">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input name="title" placeholder="Session title (optional)" maxlength="120">
+      <button class="btn">Start attendance</button>
+    </form>
+  </div>
+  {% if c.sessions %}
+  <table>
+    <tr><th>Session</th><th>Started</th><th>Present</th><th></th></tr>
+    {% for s in c.sessions[:5] %}
+    <tr><td>{{ s.title }}</td><td>{{ s.started.strftime("%d %b %H:%M") }}</td><td>{{ s.records|length }}</td>
+        <td>{% if s.is_open %}<a href="{{ url_for('session_host', sid=s.id) }}">live &rarr;</a>{% else %}<a href="{{ url_for('session_report', sid=s.id) }}">report</a>{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</section>
+{% endfor %}
+<section class="card">
+  <h3>Add a course</h3>
+  <form method="post" action="{{ url_for('course_new') }}" class="inline">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input name="code" placeholder="Course code" required maxlength="20">
+    <input name="name" placeholder="Course name" required maxlength="120">
+    <button class="btn">Add</button>
+  </form>
+</section>
+{% endblock %}

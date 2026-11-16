@@ -1,0 +1,19 @@
+FROM python:3.13-slim
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* \
+ && useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin liveattend
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt \
+ && pip uninstall -y pip setuptools wheel   # not needed at runtime; they carry their own CVEs
+COPY . .
+ARG APP_VERSION=dev
+ARG BUILD_NUMBER=local
+ARG GIT_COMMIT=local
+ENV APP_VERSION=${APP_VERSION} BUILD_NUMBER=${BUILD_NUMBER} GIT_COMMIT=${GIT_COMMIT} PYTHONUNBUFFERED=1 HOME=/tmp
+USER 10001
+EXPOSE 8000
+HEALTHCHECK --interval=60s --timeout=3s CMD ["python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+# All state lives in PostgreSQL and the QR tokens are stateless (HMAC), so several workers are safe.
+# --access-logfile - : one line per HTTP request (client IP, request, status, size, time) -> CloudWatch
+CMD ["gunicorn", "--worker-class", "gthread", "--workers", "2", "--threads", "8", "--bind", "0.0.0.0:8000", \
+     "--access-logfile", "-", "--access-logformat", "%(h)s \"%(r)s\" %(s)s %(b)sB %(M)sms \"%(a)s\"", "app:app"]

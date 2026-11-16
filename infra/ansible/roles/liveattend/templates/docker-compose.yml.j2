@@ -1,0 +1,26 @@
+# Managed by Ansible
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: liveattend
+      POSTGRES_USER: liveattend
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes: [dbdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U liveattend"], interval: 5s, retries: 20 }
+  app:
+    image: ${IMAGE}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://liveattend:${DB_PASSWORD}@db:5432/liveattend
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      PUBLIC_URL: http://{{ inventory_hostname }}
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["80:8000"]
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+volumes:
+  dbdata: {}

@@ -1,0 +1,4 @@
+- name: Restart LiveAttend
+  ansible.builtin.command: docker compose up -d --force-recreate app
+  args:
+    chdir: /opt/liveattend

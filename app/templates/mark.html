@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="card narrow center">
+{% if state == "form" %}
+  <h2>{{ sess.course.code }}</h2>
+  <p class="muted">{{ sess.title }}</p>
+  <form method="post">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="s" value="{{ sess.id }}">
+    <input type="hidden" name="t" value="{{ token }}">
+    <label>Register number <input name="reg_no" required maxlength="20" autocapitalize="characters" autocomplete="off" placeholder="RA2311003011577"></label>
+    <label>Full name <input name="name" required maxlength="60" autocomplete="name"></label>
+    <button class="btn wide">Mark me present</button>
+  </form>
+{% elif state == "done" %}
+  <div class="tick">&#10003;</div>
+  <h2>You are marked present</h2>
+  <p>{{ name }} &middot; {{ reg }}</p>
+  <p class="muted">{{ sess.course.code }} &ndash; {{ sess.title }}</p>
+{% elif state == "already" %}
+  <div class="tick">&#10003;</div>
+  <h2>Already marked</h2>
+  <p>{{ reg|default("This register number") }} is already recorded for this session.</p>
+{% elif state == "expired" %}
+  <h2>This QR code has expired</h2>
+  <p>The code changes every few seconds. Scan the one currently on the screen.</p>
+{% else %}
+  <h2>Session closed</h2>
+  <p>This attendance session is not open (any more).</p>
+{% endif %}
+</section>
+{% endblock %}

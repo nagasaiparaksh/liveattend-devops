@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body %}
+<section class="hero">
+  <h1>Attendance in one scan.</h1>
+  <p>Faculty open a session, show the QR code, and students mark themselves present from their phones.
+     The code changes every few seconds, so it cannot be shared outside the room.</p>
+  <p><a class="btn" href="{{ url_for('login') }}">Faculty login</a></p>
+</section>
+<section class="stats">
+  <div><b>{{ stats.courses }}</b><span>courses</span></div>
+  <div><b>{{ stats.sessions }}</b><span>sessions</span></div>
+  <div><b>{{ stats.marks }}</b><span>attendance marks</span></div>
+  <div><b>{{ stats.live }}</b><span>live now</span></div>
+</section>
+<p class="muted">Students: there is nothing to open here &ndash; just scan the QR code shown in your classroom.</p>
+{% endblock %}

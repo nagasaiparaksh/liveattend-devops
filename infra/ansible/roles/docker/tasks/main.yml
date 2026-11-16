@@ -1,0 +1,16 @@
+- name: Wait for cloud-init to finish (apt lock)
+  ansible.builtin.command: cloud-init status --wait
+  changed_when: false
+
+- name: Install Docker and Compose
+  ansible.builtin.apt:
+    name: [docker.io, docker-compose-v2]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Docker is running and starts on boot
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true

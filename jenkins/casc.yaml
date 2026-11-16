@@ -1,0 +1,35 @@
+# Jenkins Configuration as Code - LiveAttend
+jenkins:
+  systemMessage: "LiveAttend - CI/CD: GitHub -> Jenkins -> Docker Hub -> Kubernetes + AWS (Terraform, Ansible)"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          name: "LiveAttend Admin"
+          password: "${JENKINS_ADMIN_PASSWORD}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  markupFormatter: plainText
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "dockerhub"
+              username: "${DOCKERHUB_USER}"
+              password: "${DOCKERHUB_TOKEN}"
+              description: "Docker Hub (pushes the liveattend image)"
+security:
+  globalJobDslSecurityConfiguration:
+    useScriptSecurity: false
+unclassified:
+  location:
+    url: "http://localhost:8088/"
+  timestamper:
+    allPipelines: true
+jobs:
+  - file: /var/jenkins_conf/jobs.groovy

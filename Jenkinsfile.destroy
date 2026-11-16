@@ -1,0 +1,50 @@
+// LiveAttend - one-click teardown: AWS resources (Terraform destroy) and/or the Kubernetes namespace.
+pipeline {
+  agent any
+  options { timestamps(); ansiColor('xterm'); timeout(time: 30, unit: 'MINUTES') }
+  parameters {
+    string(name: 'CONFIRM', defaultValue: '', description: 'Type destroy to confirm')
+    booleanParam(name: 'DESTROY_AWS', defaultValue: true, description: 'Remove everything Terraform created in AWS')
+    booleanParam(name: 'DESTROY_K8S', defaultValue: false, description: 'Delete the liveattend namespace from Minikube')
+  }
+  environment {
+    AWS_REGION = 'us-east-1'
+    TF_IN_AUTOMATION = '1'
+    TF_STATE = '/var/jenkins_home/state/liveattend.tfstate'
+  }
+  stages {
+    stage('Confirm') {
+      steps { script { if (params.CONFIRM != 'destroy') { error('Type "destroy" in CONFIRM to continue.') } } }
+    }
+    stage('Terraform Destroy (AWS)') {
+      when { expression { params.DESTROY_AWS } }
+      steps {
+        dir('infra/terraform') {
+          sh '''
+            if [ ! -f "$TF_STATE" ]; then echo "No Terraform state - nothing deployed to AWS."; exit 0; fi
+            terraform init -input=false -backend-config="path=$TF_STATE"
+            terraform destroy -input=false -auto-approve -var "admin_cidr=0.0.0.0/32"
+            rm -f "$(dirname "$TF_STATE")/admin-password"
+          '''
+        }
+      }
+    }
+    stage('Verify AWS is clean') {
+      when { expression { params.DESTROY_AWS } }
+      steps {
+        sh '''
+          echo "Running LiveAttend instances:"
+          aws ec2 describe-instances --filters Name=tag:Project,Values=LiveAttend Name=instance-state-name,Values=pending,running,stopping,stopped \
+            --query 'Reservations[].Instances[].InstanceId' --output text
+          echo "LiveAttend VPCs:"
+          aws ec2 describe-vpcs --filters Name=tag:Project,Values=LiveAttend --query 'Vpcs[].VpcId' --output text
+        '''
+      }
+    }
+    stage('Delete Kubernetes namespace') {
+      when { expression { params.DESTROY_K8S } }
+      steps { sh 'kubectl delete namespace liveattend --ignore-not-found' }
+    }
+  }
+  post { success { script { currentBuild.description = 'Teardown complete' } } }
+}

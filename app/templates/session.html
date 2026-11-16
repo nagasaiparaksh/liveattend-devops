@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Live: {{ sess.title }}{% endblock %}
+{% block body %}
+<div class="row">
+  <div><h2>{{ sess.course.code }} &ndash; {{ sess.title }}</h2><span class="muted">Students scan the code with their phone camera</span></div>
+  <form method="post" action="{{ url_for('session_end', sid=sess.id) }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="btn danger">End session</button>
+  </form>
+</div>
+<div class="split">
+  <section class="card qrbox">
+    <div id="qr">{{ qr|safe }}</div>
+    <div class="bar"><i id="bar"></i></div>
+    <p class="muted">Code changes every {{ rotate }} seconds</p>
+  </section>
+  <section class="card">
+    <h3>Present: <span id="count" class="big">0</span></h3>
+    <ul id="list" class="people"></ul>
+  </section>
+</div>
+<script>
+const SID = {{ sess.id }}, ROTATE = {{ rotate }};
+const list = document.getElementById("list"), count = document.getElementById("count");
+async function getJSON(u) { const r = await fetch(u, {cache: "no-store"}); return r.json(); }
+async function refreshList() {
+  try {
+    const d = await getJSON(`/session/${SID}/live.json`);
+    if (!d.open) { location.href = `/session/${SID}/report`; return; }
+    count.textContent = d.count;
+    list.replaceChildren(...d.records.map(r => {
+      const li = document.createElement("li");
+      li.textContent = `${r.reg_no}  ${r.name}`;
+      return li;
+    }));
+  } catch (e) { /* server restarting - try again */ }
+}
+async function refreshQR() {
+  try {
+    const d = await getJSON(`/session/${SID}/qr.json`);
+    if (d.open) { document.getElementById("qr").innerHTML = d.svg; restartBar(d.expires_in); setTimeout(refreshQR, d.expires_in * 1000); return; }
+  } catch (e) { /* retry below */ }
+  setTimeout(refreshQR, 2000);
+}
+function restartBar(sec) {
+  const b = document.getElementById("bar");
+  b.style.transition = "none"; b.style.width = (100 * sec / ROTATE) + "%";
+  b.offsetWidth; b.style.transition = `width ${sec}s linear`; b.style.width = "0%";
+}
+restartBar(ROTATE); setTimeout(refreshQR, 1000);
+refreshList(); setInterval(refreshList, 2000);
+</script>
+{% endblock %}
