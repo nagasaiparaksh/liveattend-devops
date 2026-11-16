@@ -31,6 +31,16 @@ resource "aws_instance" "app" {
   key_name               = aws_key_pair.deployer.key_name
   monitoring             = false
 
+  # Also accept SSH on 443, because many networks block outbound port 22
+  user_data_replace_on_change = true
+  user_data                   = <<-EOT
+    #!/bin/bash
+    printf 'Port 22\nPort 443\n' > /etc/ssh/sshd_config.d/10-ports.conf
+    systemctl disable --now ssh.socket || true
+    systemctl enable ssh
+    systemctl restart ssh
+  EOT
+
   metadata_options {
     http_tokens = "required" # IMDSv2 only
   }
@@ -102,6 +112,6 @@ resource "local_file" "inventory" {
   file_permission = "0644"
   content         = <<-EOT
     [liveattend]
-    ${aws_eip.app.public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${abspath(path.module)}/../ansible/.generated/id_ed25519
+    ${aws_eip.app.public_ip} ansible_user=ubuntu ansible_port=443 ansible_ssh_private_key_file=${abspath(path.module)}/../ansible/.generated/id_ed25519
   EOT
 }

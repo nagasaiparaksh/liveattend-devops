@@ -22,6 +22,13 @@ resource "aws_security_group" "web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
+    description = "SSH on 443 for Ansible (networks that block port 22)"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
     description = "SSH for Ansible, Jenkins host only"
     from_port   = 22
     to_port     = 22
