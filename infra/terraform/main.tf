@@ -26,7 +26,7 @@ data "aws_ami" "ubuntu_arm64" {
 resource "aws_instance" "app" {
   ami                    = data.aws_ami.ubuntu_arm64.id
   instance_type          = var.instance_type
-  subnet_id              = aws_subnet.public.id
+  subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.web.id]
   key_name               = aws_key_pair.deployer.key_name
   monitoring             = false
