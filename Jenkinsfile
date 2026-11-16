@@ -123,7 +123,7 @@ pipeline {
             MYIP=$(curl -fsS https://checkip.amazonaws.com | tr -d '[:space:]')
             terraform init -input=false -backend-config="path=$TF_STATE"
             terraform validate
-            terraform plan -input=false -var "admin_cidr=$MYIP/32" -out=tfplan
+            terraform plan -input=false -var "admin_cidr=0.0.0.0/0" -out=tfplan
             terraform apply -input=false -auto-approve tfplan
             terraform output
           '''
